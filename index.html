@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jagdamba Doors</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background-color: #faf9f6;
+      color: #1a1c1a;
+      overflow-x: hidden;
+      width: 100vw;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Manrope', sans-serif;
+    }
+
+    #preloader {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #111010;
+      color: #faf9f6;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem 4rem;
+      pointer-events: all;
+    }
+
+    .master-pinned-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .stage-wrapper {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      z-index: 10;
+    }
+
+    .hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      max-width: 1400px;
+      height: 100vh;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .svg-arrow-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    .connector-path {
+      fill: none;
+      stroke: #827472;
+      stroke-width: 2;
+      stroke-linecap: round;
+      opacity: 0;
+    }
+
+    .squircle-card {
+      position: absolute;
+      width: 300px;
+      padding: 1.5rem;
+      border-radius: 2.25rem;
+      border: 1px solid #e3e2e0;
+      background: #f4f3f1;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.05);
+      z-index: 30;
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    .card-hand-carved { left: 4%; top: 20%; }
+    .card-hardware { left: 4%; bottom: 10%; }
+    .card-dovetail { right: 4%; top: 12%; }
+    .card-hardwood { right: 4%; bottom: 12%; }
+
+    .char {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    #reveal-section {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 20;
+      transform: translateY(100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1.5rem;
+    }
+
+    .word-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 0.15em 0.12em;
+      padding: 0.08em 0.4em;
+      vertical-align: middle;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .word-text {
+      position: relative;
+      z-index: 1;
+      opacity: 0;
+      color: #ffffff;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .box-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      border-radius: 9999px;
+      background-color: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      will-change: opacity;
+    }
+
+    #cards-section {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 30;
+      transform: translateY(100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #111010;
+      padding: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-[#faf9f6]">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useLayoutEffect, useMemo, useRef } = React;
+
+    const FEATURE_CARDS = [
+      {
+        className: "card-hand-carved",
+        icon: "fa-solid fa-hammer",
+        title: "Hand-Carved Detailing",
+        copy: "Artisanal deep-groove panel moldings executed by master woodworkers for profound shadows."
+      },
+      {
+        className: "card-hardware",
+        icon: "fa-solid fa-key",
+        title: "Oil-Rubbed Hardware",
+        copy: "Heavy-duty solid bronze handle sets treated to age gracefully, developing a rich organic patina."
+      },
+      {
+        className: "card-dovetail",
+        icon: "fa-solid fa-ruler-combined",
+        title: "Dovetail Joinery",
+        copy: "Interlocking corner joints that ensure generational structural integrity and zero warping."
+      },
+      {
+        className: "card-hardwood",
+        icon: "fa-solid fa-shield-halved",
+        title: "Solid Hardwood Core",
+        copy: "Multi-layered premium kiln-dried teak engineered to block external noise while offering peak security."
+      }
+    ];
+
+    const STACK_IMAGES = [
+      { src: "image1.png", alt: "Door Design 1" },
+      { src: "image2.png", alt: "Door Design 2" },
+      { src: "image3.png", alt: "Door Design 3" },
+      { src: "image4.png", alt: "Door Design 4" }
+    ];
+
+    const RAW_PARAGRAPH = "At Jagdamba Doors, we believe that an entrance is more than just a threshold it is the statement piece of your architectural vision. We blend generations of artisanal woodworking technique with modern engineering precision to craft doors of timeless beauty and strength.";
+    const VISIBLE_QUEUE_LIMIT = 8;
+    const BRIGHTNESS_PALETTE = [0.90, 0.70, 0.50, 0.35, 0.22, 0.14, 0.08, 0.04];
+
+    function App() {
+      const appRef = useRef(null);
+      const preloaderRef = useRef(null);
+      const counterRef = useRef(null);
+      const progressBarRef = useRef(null);
+      const doorContainerRef = useRef(null);
+      const heroHeaderRef = useRef(null);
+      const heroSubtitleRef = useRef(null);
+      const revealSectionRef = useRef(null);
+      const cardsSectionRef = useRef(null);
+      const masterPinWrapperRef = useRef(null);
+
+      const tokens = useMemo(() => RAW_PARAGRAPH.split(/(\s+)/), []);
+
+      useLayoutEffect(() => {
+        gsap.registerPlugin(ScrollTrigger);
+        document.body.style.overflow = "hidden";
+
+        const ctx = gsap.context(() => {
+          const doorContainer = doorContainerRef.current;
+          const heroHeader = heroHeaderRef.current;
+          const heroSubtitle = heroSubtitleRef.current;
+          const revealSection = revealSectionRef.current;
+          const cardsSection = cardsSectionRef.current;
+          const wordWrappers = gsap.utils.toArray(".word-wrapper", appRef.current);
+          const cards = gsap.utils.toArray(".squircle-card", appRef.current);
+          const arrowPaths = gsap.utils.toArray(".connector-path", appRef.current);
+          const stackCards = gsap.utils.toArray(".stack-card", appRef.current);
+
+          arrowPaths.forEach((path) => {
+            const length = path.getTotalLength();
+            path.style.strokeDasharray = length;
+            path.style.strokeDashoffset = length;
+            gsap.set(path, { opacity: 0 });
+          });
+
+          gsap.set(doorContainer, {
+            y: 350,
+            x: 0,
+            scale: 1.85,
+            opacity: 0,
+            transformOrigin: "center top"
+          });
+
+          gsap.set(stackCards[0], { y: "0%", scale: 1, rotation: 0 });
+          for (let i = 1; i < stackCards.length; i += 1) {
+            gsap.set(stackCards[i], { y: "100%", scale: 1, rotation: 0 });
+          }
+
+          function updateBoxQueue(progress) {
+            const rawIndex = progress * wordWrappers.length;
+            const currentIndex = Math.min(wordWrappers.length, Math.floor(rawIndex));
+
+            wordWrappers.forEach((wrapper, idx) => {
+              const box = wrapper.querySelector(".box-overlay");
+              const text = wrapper.querySelector(".word-text");
+
+              if (idx < currentIndex) {
+                gsap.set(text, { opacity: 1 });
+                gsap.set(box, { opacity: 0 });
+              } else if (idx >= currentIndex && idx < currentIndex + VISIBLE_QUEUE_LIMIT) {
+                const distance = idx - currentIndex;
+                const opacityLevel = BRIGHTNESS_PALETTE[distance] || 0.02;
+
+                gsap.set(text, { opacity: 0 });
+                gsap.set(box, { opacity: opacityLevel });
+              } else {
+                gsap.set(text, { opacity: 0 });
+                gsap.set(box, { opacity: 0 });
+              }
+            });
+          }
+
+          function initUnifiedMasterTimeline() {
+            const masterTl = gsap.timeline({
+              scrollTrigger: {
+                trigger: masterPinWrapperRef.current,
+                start: "top top",
+                end: "+=9000",
+                scrub: 1,
+                pin: true,
+                invalidateOnRefresh: true
+              }
+            });
+
+            masterTl
+              .to(doorContainer, {
+                y: -20,
+                scale: 1.0,
+                duration: 2,
+                ease: "power2.out"
+              })
+              .to(heroHeader, {
+                opacity: 0,
+                y: -40,
+                duration: 1
+              }, "<")
+              .to(cards, {
+                opacity: 1,
+                scale: 1,
+                stagger: 0.15,
+                duration: 1.2,
+                ease: "back.out(1.2)"
+              }, "-=0.4")
+              .to(arrowPaths, {
+                opacity: 1,
+                duration: 0.2,
+                stagger: 0.15
+              }, "-=0.8")
+              .to(arrowPaths, {
+                strokeDashoffset: 0,
+                stagger: 0.15,
+                duration: 1,
+                ease: "power1.inOut"
+              }, "<")
+              .to(revealSection, {
+                y: "0%",
+                duration: 2,
+                ease: "power2.inOut"
+              })
+              .to(cards, { opacity: 0, duration: 1 }, "<")
+              .to(arrowPaths, { opacity: 0, duration: 1 }, "<");
+
+            const revealProgress = { value: 0 };
+            masterTl.to(revealProgress, {
+              value: 1,
+              duration: 4,
+              ease: "none",
+              onUpdate: () => updateBoxQueue(revealProgress.value)
+            });
+
+            masterTl.to(cardsSection, {
+              y: "0%",
+              duration: 2,
+              ease: "power2.inOut"
+            });
+
+            for (let i = 0; i < stackCards.length - 1; i += 1) {
+              const currentCard = stackCards[i];
+              const nextCard = stackCards[i + 1];
+
+              masterTl
+                .to(currentCard, {
+                  scale: 0.7,
+                  rotation: 5,
+                  duration: 1.5,
+                  ease: "none"
+                })
+                .to(nextCard, {
+                  y: "0%",
+                  duration: 1.5,
+                  ease: "none"
+                }, "<");
+            }
+          }
+
+          const progressObj = { value: 0 };
+          const preloaderTl = gsap.timeline({
+            onComplete: () => {
+              document.body.style.overflow = "auto";
+              const introTl = gsap.timeline({ onComplete: initUnifiedMasterTimeline });
+
+              introTl
+                .to(".char", {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.8,
+                  stagger: 0.05,
+                  ease: "power3.out"
+                })
+                .to(heroSubtitle, {
+                  opacity: 1,
+                  duration: 0.6,
+                  ease: "power2.out"
+                }, "-=0.3")
+                .to(doorContainer, {
+                  y: 250,
+                  opacity: 1,
+                  duration: 1.1,
+                  ease: "power3.out"
+                }, "-=0.6");
+            }
+          });
+
+          preloaderTl
+            .to(progressObj, {
+              value: 100,
+              duration: 2.2,
+              ease: "power2.inOut",
+              onUpdate: () => {
+                const value = Math.floor(progressObj.value);
+                counterRef.current.textContent = value;
+                progressBarRef.current.style.width = `${value}%`;
+              }
+            })
+            .to(preloaderRef.current, {
+              yPercent: -100,
+              duration: 0.9,
+              ease: "power4.inOut"
+            });
+        }, appRef);
+
+        return () => {
+          document.body.style.overflow = "";
+          ctx.revert();
+          ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+        };
+      }, []);
+
+      return (
+        <div ref={appRef}>
+          <div id="preloader" ref={preloaderRef}>
+            <div className="flex justify-between items-center w-full">
+              <span className="text-xs font-bold tracking-[0.3em] uppercase text-stone-400">Jagdamba Doors</span>
+              <span className="text-xs font-medium tracking-wider text-stone-500 uppercase">Architecture &amp; Design</span>
+            </div>
+
+            <div className="my-auto">
+              <div className="overflow-hidden">
+                <h2 className="text-3xl md:text-5xl font-light tracking-tight text-stone-200">
+                  Crafting Architectural Entrances
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-end w-full">
+              <div className="w-48 bg-stone-800 h-[2px] relative overflow-hidden rounded-full mb-2">
+                <div ref={progressBarRef} className="absolute top-0 left-0 h-full bg-stone-200 w-0"></div>
+              </div>
+              <div ref={counterRef} className="text-7xl md:text-9xl font-black font-mono text-stone-100 leading-none">
+                0
+              </div>
+            </div>
+          </div>
+
+          <header className="fixed top-0 left-0 w-full z-50 bg-[#faf9f6]/95 backdrop-blur-md border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+              <a className="text-xl font-bold tracking-[0.25em] uppercase text-gray-900" href="#">
+                Jagdamba Doors
+              </a>
+              <nav className="hidden md:flex space-x-12 text-sm font-semibold text-gray-700">
+                <a href="#" className="hover:text-black transition">Home</a>
+                <a href="#" className="hover:text-black transition">About</a>
+                <a href="#" className="hover:text-black transition">Services</a>
+                <a href="#" className="hover:text-black transition">Portfolio</a>
+              </nav>
+              <a href="#" className="px-7 py-2.5 text-sm font-semibold bg-[#271310] text-white rounded hover:bg-black transition">
+                Contact
+              </a>
+            </div>
+          </header>
+
+          <main ref={masterPinWrapperRef} className="master-pinned-container">
+            <div className="stage-wrapper">
+              <div ref={heroHeaderRef} className="text-center pt-24 z-40 pointer-events-none">
+                <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tight text-gray-900 mb-2">
+                  {"Elegance".split("").map((char, index) => (
+                    <span key={`${char}-${index}`} className="char">{char}</span>
+                  ))}
+                </h1>
+                <p ref={heroSubtitleRef} className="text-lg md:text-2xl text-gray-600 font-medium opacity-0">
+                  Crafted to make an entrance.
+                </p>
+              </div>
+
+              <div className="hero-canvas">
+                <svg className="svg-arrow-overlay" viewBox="0 0 1400 800" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#827472" />
+                    </marker>
+                  </defs>
+                  <path className="connector-path" d="M 340 240 C 420 240, 480 290, 550 300" markerEnd="url(#arrow)" />
+                  <path className="connector-path" d="M 340 640 C 420 640, 480 580, 550 560" markerEnd="url(#arrow)" />
+                  <path className="connector-path" d="M 1060 180 C 980 180, 920 240, 850 260" markerEnd="url(#arrow)" />
+                  <path className="connector-path" d="M 1060 600 C 980 600, 920 540, 850 520" markerEnd="url(#arrow)" />
+                </svg>
+
+                {FEATURE_CARDS.map((card) => (
+                  <div key={card.title} className={`squircle-card ${card.className}`}>
+                    <div className="flex items-center space-x-2 mb-2 text-gray-500 text-xs font-bold tracking-wider uppercase">
+                      <span className="w-6 h-6 rounded-full bg-stone-300/60 flex items-center justify-center text-xs text-stone-700">
+                        <i className={card.icon}></i>
+                      </span>
+                      <span>Craft Detail</span>
+                    </div>
+                    <h3 className="text-lg font-bold mb-1 text-gray-900">{card.title}</h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">{card.copy}</p>
+                  </div>
+                ))}
+
+                <div ref={doorContainerRef} className="relative z-20 flex items-center justify-center">
+                  <img src="door.webp" alt="Ornate carved wooden door" className="h-[680px] w-auto object-cover rounded-none block drop-shadow-md" />
+                </div>
+              </div>
+            </div>
+
+            <section id="reveal-section" ref={revealSectionRef} className="bg-[#111010]">
+              <div className="max-w-5xl mx-auto text-center font-bold text-2xl md:text-4xl lg:text-5xl leading-relaxed tracking-tight whitespace-pre-wrap">
+                {tokens.map((token, index) => (
+                  /^\s+$/.test(token) ? (
+                    <span key={`space-${index}`}>{token}</span>
+                  ) : (
+                    <div key={`word-${index}`} className="word-wrapper">
+                      <span className="word-text">{token}</span>
+                      <div className="box-overlay"></div>
+                    </div>
+                  )
+                ))}
+              </div>
+            </section>
+
+            <section id="cards-section" ref={cardsSectionRef}>
+              <div className="relative h-[90%] w-full max-w-sm overflow-hidden rounded-3xl sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
+                {STACK_IMAGES.map((image) => (
+                  <img
+                    key={image.src}
+                    className="stack-card absolute h-full w-full object-cover rounded-3xl shadow-2xl"
+                    src={image.src}
+                    alt={image.alt}
+                  />
+                ))}
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
